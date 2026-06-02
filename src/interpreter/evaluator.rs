@@ -46,6 +46,7 @@ impl Evaluator {
     }
 
     pub fn get_value(&self, value_name: String) -> Value {
+        println!("target: {}", value_name.clone());
         match self.enviroment.get(&value_name) {
             Some(val) => val.clone(),
             _ => {
@@ -57,6 +58,7 @@ impl Evaluator {
     }
 
     pub fn insert_value(&mut self, value_name: String, value: Value) {
-        self.enviroment.insert(value_name, value);
+        self.enviroment.insert(value_name.clone(), value.clone());
+        println!("{}, {:?}", value_name.clone(), value.clone());
     }
 }

@@ -27,6 +27,7 @@ impl Parser {
             (TokenType::FloatLiteral(_), TokenType::FloatLiteral(_)) => true,
             (TokenType::BoolLiteral(_), TokenType::BoolLiteral(_)) => true,
             (TokenType::CharacterLiteral(_), TokenType::CharacterLiteral(_)) => true,
+            (TokenType::Identifier(_), TokenType::Identifier(_)) => true,
             _ => token_type == &current,
         }
     }
