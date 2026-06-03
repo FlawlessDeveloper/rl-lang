@@ -1,4 +1,8 @@
-use crate::{ast::statements::Statement, interpreter::evaluator::Evaluator, utils::errors::Error};
+use crate::{
+    ast::statements::Statement,
+    interpreter::{evaluator::Evaluator, values::Value},
+    utils::errors::Error,
+};
 
 impl Evaluator {
     pub fn evaluate_statement(&mut self, statement: &Statement) {
@@ -15,6 +19,56 @@ impl Evaluator {
             Statement::Expression(expr) => {
                 self.evaluate(expr);
             }
+            Statement::While { condition, body } => loop {
+                match self.evaluate(condition) {
+                    Value::Bool(true) => {}
+                    Value::Bool(false) => break,
+                    _ => {
+                        panic!();
+                    }
+                }
+                self.evaluate_block(body);
+            },
+            Statement::ConditionalBranch { condition, body } => match condition {
+                Some(condition) => {
+                    match self.evaluate(condition) {
+                        Value::Bool(true) => {}
+                        Value::Bool(false) => {
+                            return;
+                        }
+                        _ => {
+                            panic!();
+                        }
+                    }
+                    self.evaluate_block(body);
+                }
+                _ => {
+                    self.evaluate_block(body);
+                }
+            },
+            Statement::Conditional {
+                if_branch,
+                elseif_branch,
+                else_branch,
+            } => {
+                self.evaluate_statement(if_branch);
+
+                if let Some(branches) = elseif_branch {
+                    for branch in branches {
+                        self.evaluate_statement(branch);
+                    }
+                }
+
+                if let Some(branch) = else_branch {
+                    self.evaluate_statement(branch);
+                }
+            }
+        }
+    }
+
+    pub fn evaluate_block(&mut self, statements: &[Statement]) {
+        for statement in statements {
+            self.evaluate_statement(statement);
         }
     }
 }

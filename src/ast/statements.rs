@@ -8,4 +8,17 @@ pub enum Statement {
         value: Expression,
     },
     Expression(Expression),
+    While {
+        condition: Expression,
+        body: Vec<Statement>,
+    },
+    ConditionalBranch {
+        condition: Option<Expression>,
+        body: Vec<Statement>,
+    },
+    Conditional {
+        if_branch: Box<Statement>,
+        elseif_branch: Option<Vec<Statement>>,
+        else_branch: Option<Box<Statement>>,
+    },
 }

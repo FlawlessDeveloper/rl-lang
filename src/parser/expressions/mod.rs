@@ -85,8 +85,8 @@ impl Parser {
     }
 
     pub fn parse_primary(&mut self) -> Expression {
-        // println!("current index: {:?}", self.current);
-        // println!("current token: {:?}", self.peek());
+        println!("current index: {:?}", self.current);
+        println!("current token: {:?}", self.peek());
 
         // is it identifier
         if self.match_type(&[TokenType::Identifier(String::new())]) {
