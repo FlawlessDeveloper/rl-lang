@@ -16,6 +16,20 @@ impl Evaluator {
                 // should add type check here but for now assume the user input correctly
                 self.insert_value(name.clone(), val);
             }
+
+            Statement::Array {
+                name,
+                type_annotation,
+                value,
+            } => {
+                let mut items: Vec<Value> = Vec::new();
+                for item in value {
+                    let item = self.evaluate(item);
+                    items.push(item);
+                }
+                self.insert_value(name.clone(), Value::Values(items));
+            }
+
             Statement::Expression(expr) => {
                 self.evaluate(expr);
             }

@@ -7,6 +7,11 @@ pub enum Statement {
         type_annotation: TokenType,
         value: Expression,
     },
+    Array {
+        name: String,
+        type_annotation: TokenType,
+        value: Vec<Expression>,
+    },
     Expression(Expression),
     While {
         condition: Expression,

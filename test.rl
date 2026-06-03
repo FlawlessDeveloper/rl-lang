@@ -26,3 +26,4 @@ x /= 2
 println(x)
 x *= 5
 println(x)
+dec arr[int] x = [1,3,5]

@@ -64,6 +64,7 @@ pub enum TokenType {
     Bool,
     String,
     Char,
+    Array,
 
     Newline,
 

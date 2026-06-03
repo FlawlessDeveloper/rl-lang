@@ -33,6 +33,7 @@ fn input_with_prompt(prompt: Value) -> Value {
         Value::Char(c) => c.to_string(),
         Value::Bool(b) => b.to_string(),
         Value::Null => "null".to_string(),
+        _ => "".to_string(),
     };
 
     println!("{}", prompt);

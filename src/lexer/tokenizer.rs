@@ -196,6 +196,7 @@ impl Tokenizer {
             "dec" => self.add_token(TokenType::Dec),
             "if" => self.add_token(TokenType::If),
             "else" => self.add_token(TokenType::Else),
+            "arr" => self.add_token(TokenType::Array),
 
             &_ => self.add_token(TokenType::Identifier(value)),
         }
