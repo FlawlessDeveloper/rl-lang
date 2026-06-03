@@ -36,11 +36,45 @@ impl Parser {
         ]) {
             let operator = self.previous();
             let right = self.parse_term();
-            left = Expression::Binary {
-                left: Box::new(left),
-                operator,
-                right: Box::new(right),
-            };
+
+            match operator {
+                TokenType::PlusEqual
+                | TokenType::MinusEqual
+                | TokenType::StarEqual
+                | TokenType::SlashEqual => {
+                    if let Expression::Identifier(name) = left {
+                        let operator = match operator {
+                            TokenType::PlusEqual => TokenType::Plus,
+                            TokenType::MinusEqual => TokenType::Minus,
+                            TokenType::StarEqual => TokenType::Star,
+                            TokenType::SlashEqual => TokenType::Slash,
+                            _ => unreachable!(),
+                        };
+                        let binary = Expression::Binary {
+                            left: Box::new(Expression::Identifier(name.clone())),
+                            operator,
+                            right: Box::new(right),
+                        };
+                        left = Expression::Assign {
+                            name: name.clone(),
+                            value: Box::new(binary),
+                        };
+                    } else {
+                        left = Expression::Binary {
+                            left: Box::new(left),
+                            operator,
+                            right: Box::new(right),
+                        };
+                    }
+                }
+                _ => {
+                    left = Expression::Binary {
+                        left: Box::new(left),
+                        operator,
+                        right: Box::new(right),
+                    };
+                }
+            }
         }
         left
     }

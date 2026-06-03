@@ -17,8 +17,10 @@ if (false) {
 
 dec int x = 1
 x += 1
+
 println(x)
 x -= -1
+x = x + 1
 println(x)
 x /= 2
 println(x)
