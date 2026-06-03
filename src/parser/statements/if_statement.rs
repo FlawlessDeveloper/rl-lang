@@ -10,6 +10,9 @@ impl Parser {
         };
         let mut elseif_branch = Vec::new();
         let mut else_body = Vec::new();
+        while matches!(self.peek(), TokenType::Newline) {
+            self.advance();
+        }
         while self.peek() == TokenType::Else {
             self.advance();
             if self.peek() == TokenType::If {
@@ -21,6 +24,9 @@ impl Parser {
                     body: branch_body,
                 };
                 elseif_branch.push(branch);
+                while matches!(self.peek(), TokenType::Newline) {
+                    self.advance();
+                }
             } else {
                 else_body = self.parse_block();
             }
