@@ -1,25 +1,46 @@
+/// represents an Interpreter error with optional line number and error category
 pub struct Error {
+    /// readable message
     message: String,
+    /// line number of error in source file
     line: Option<usize>,
+    /// the category and optional context of the error
     reason: Option<ErrorReason>,
 }
 
+/// provides an error category with optional error context
 pub struct ErrorReason {
+    /// error category
     error_type: Reason,
+    /// optional lines of error output
     data: Option<Vec<String>>,
 }
 
+/// the error category
 pub enum Reason {
+    /// error occured during parsing
     Parse,
+    /// error occured when building the ast
     AST,
+    /// error occured during lexing
     Lexer,
+    /// error occured during evaluation
     Interpreter,
+    /// error orginated from utils
     Utils,
+    /// error occured during compilation
     Compile,
+    /// error occured during runtime
     Runtime,
 }
 
 impl Error {
+    /// creates a new [`Error`] with given message , optional line number and optional reason
+    ///
+    /// # example
+    /// ```rust
+    /// Error::init("unexpected error".to_string(), Some(10), None);
+    /// ```
     pub fn init(message: String, line: Option<usize>, reason: Option<ErrorReason>) -> Self {
         Self {
             message,
@@ -28,6 +49,14 @@ impl Error {
         }
     }
 
+    /// prints the error stdout and exits the process with code `1`
+    ///
+    /// # output format
+    /// ```text
+    /// [10)unexpected error]
+    /// [Lexer Error]
+    /// unknown token `$`
+    /// ```
     pub fn print_error(&self) {
         match &self.line {
             Some(l) => println!("[{}) Error: {}]", l, self.message),
@@ -51,10 +80,17 @@ impl Error {
 }
 
 impl ErrorReason {
+    /// creates a new [`ErrorReason`] with category type and optional data
+    ///
+    /// # example
+    /// ```rust
+    /// ErrorReason::init(Reason::Lexer, Some(vec!["unknown token `$`",to_string()]))
+    /// ```
     pub fn init(error_type: Reason, data: Option<Vec<String>>) -> Self {
         Self { error_type, data }
     }
 
+    /// returns the display of category type
     fn get_type_string(&self) -> String {
         match &self.error_type {
             Reason::Parse => "Parse Error",
@@ -66,17 +102,5 @@ impl ErrorReason {
             Reason::Runtime => "Runtime Error",
         }
         .to_string()
-    }
-
-    fn print_error_reason(&self) {
-        match &self.data {
-            Some(d) => {
-                println!("[{}]:", &self.get_type_string());
-                for line in d.iter() {
-                    println!("\t{line}");
-                }
-            }
-            None => println!("[{}]", &self.get_type_string()),
-        }
     }
 }
