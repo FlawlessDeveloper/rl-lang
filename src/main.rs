@@ -1,24 +1,61 @@
 use crate::{interpreter::evaluator::Evaluator, parser::parser::Parser};
-
+use log::{debug, error, info, warn};
 mod ast;
 mod interpreter;
 mod lexer;
 mod parser;
 mod utils;
 
+/// entry point for `rl` interpreter
+///
+/// # usage
+/// ```bash
+/// rl run <source.rl>
+/// ```
+///
+/// # phases
+/// 1. **lexing**
+/// 2. **parsing**
+/// 3. **evaluating**
 fn main() {
+    // initializing the logger
+    env_logger::Builder::new()
+        .filter_level(log::LevelFilter::Debug)
+        .target(env_logger::Target::Pipe(Box::new(
+            std::fs::File::create("log.txt").unwrap(),
+        )))
+        .init();
+    info!("logger initialized");
+
     // arguments
+    info!("reading arguments");
     let arguments: Vec<String> = std::env::args().collect();
+    debug!("used arguments [{:?}]", arguments);
     if arguments.len() != 3 || arguments[1] != "run" {
         eprintln!("Usage: rlp run <source-file.rl>");
         return;
     }
 
+    // check the source file if it ends with rl extension and then parse it to string
+    if !arguments[2].ends_with(".rl") {
+        utils::errors::Error::init(
+            "file extension is not .rl".to_string(),
+            None,
+            Some(utils::errors::ErrorReason::init(
+                utils::errors::Reason::Compile,
+                None,
+            )),
+        )
+        .print_error();
+        return;
+    }
+
     let source_file = match std::fs::read_to_string(&arguments[2]) {
         Ok(file) => file,
+
         Err(_) => {
             utils::errors::Error::init(
-                "Failed To Read File".to_string(),
+                "failed to read file".to_string(),
                 None,
                 Some(utils::errors::ErrorReason::init(
                     utils::errors::Reason::Compile,
@@ -29,31 +66,21 @@ fn main() {
             return;
         }
     };
-    println!("[source file: {}]", arguments[2]);
 
-    // debug prints the selected file
-    // println!("{}", source_file);
-
+    println!("[Parsing source file: {}]", arguments[2]);
+    // phase one: lexing the source file into tokens
+    info!("lexing the source file...");
     let tokens = lexer::tokenizer::Tokenizer::lex(&source_file);
 
-    // let mut current_debug_line: usize = 0;
-    // for token in lexer.iter() {
-    //    if token.line != current_debug_line {
-    //        print!("\n{} ", current_debug_line);
-    //        current_debug_line += 1;
-    //    }
-    //    if matches!(token.token, lexer::tokentypes::TokenType::Newline)
-    //        || matches!(token.token, lexer::tokentypes::TokenType::Eof)
-    //    {
-    //        continue;
-    //    }
-    //    print!("[{}] ", token.lexeme);
-    // }
-
+    // phase two: parsing the tokens into ast tree
+    info!("parsing the tokens into ast tree...");
     let statements = Parser::parse(tokens);
 
+    // phase three: evaluating the ast tree
+    info!("evaluating the ast tree...");
     let mut evaluator = Evaluator::new();
     for statement in statements {
         evaluator.evaluate_statement(&statement);
     }
+    info!("evaluation done")
 }
