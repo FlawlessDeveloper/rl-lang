@@ -1,3 +1,4 @@
+mod const_declaration;
 mod if_statement;
 mod variable_declaration;
 mod while_statement;
@@ -20,9 +21,13 @@ impl Parser {
             }
             TokenType::Dec => {
                 self.advance();
-                log::info!("found `declaration` while parsing");
+                log::info!("found `declaration` for variable while parsing");
                 self.parse_variable_declartion()
-                // println!("{:?}", stmt);
+            }
+            TokenType::Const => {
+                self.advance();
+                log::info!("found `declaration` for constant while parsing");
+                self.parse_const_declartion()
             }
             TokenType::While => {
                 self.advance();

@@ -5,7 +5,7 @@ use crate::{
 };
 
 impl Parser {
-    pub fn parse_variable_declartion(&mut self) -> Statement {
+    pub fn parse_const_declartion(&mut self) -> Statement {
         log::debug!("{:?}", self.peek());
         log::debug!("parsing type");
         if self.match_type(&[TokenType::Array]) && self.peek() == TokenType::LeftBracket {
@@ -34,7 +34,7 @@ impl Parser {
                 TokenType::Array => {
                     self.advance();
                     self.match_type(&[TokenType::LeftBracket]);
-                    let inner = self.parse_type(true);
+                    let inner = self.parse_type(false);
                     self.match_type(&[TokenType::RightBracket]);
                     TypeAnnotation::Array(Box::new(inner))
                 }
@@ -127,7 +127,7 @@ impl Parser {
                 }
             }
             self.match_type(&[TokenType::RightBracket]);
-            return Statement::Array {
+            return Statement::ConstantArray {
                 name,
                 type_annotation: annoation_type,
                 value: items,
@@ -192,84 +192,10 @@ impl Parser {
 
         let value = self.parse_expression();
 
-        crate::ast::statements::Statement::VariableDeclaration {
+        crate::ast::statements::Statement::ConstantDeclaration {
             name,
             type_annotation: var_type,
             value,
-        }
-    }
-}
-
-// should separate later
-impl Parser {
-    pub fn parse_type(&mut self, is_mut: bool) -> TypeAnnotation {
-        match is_mut {
-            true => match self.peek() {
-                TokenType::Int => {
-                    self.advance();
-                    TypeAnnotation::Int
-                }
-                TokenType::Float => {
-                    self.advance();
-                    TypeAnnotation::Float
-                }
-                TokenType::Bool => {
-                    self.advance();
-                    TypeAnnotation::Bool
-                }
-                TokenType::String => {
-                    self.advance();
-                    TypeAnnotation::String
-                }
-                TokenType::Char => {
-                    self.advance();
-                    TypeAnnotation::Char
-                }
-                TokenType::Array => {
-                    self.advance();
-                    self.match_type(&[TokenType::LeftBracket]);
-                    let inner = self.parse_type(true);
-                    self.match_type(&[TokenType::RightBracket]);
-                    TypeAnnotation::Array(Box::new(inner))
-                }
-                _ => {
-                    // should add error later
-                    unreachable!()
-                }
-            },
-            false => match self.peek() {
-                TokenType::Int => {
-                    self.advance();
-                    TypeAnnotation::CInt
-                }
-                TokenType::Float => {
-                    self.advance();
-                    TypeAnnotation::CFloat
-                }
-                TokenType::Bool => {
-                    self.advance();
-                    TypeAnnotation::CBool
-                }
-                TokenType::String => {
-                    self.advance();
-                    TypeAnnotation::CString
-                }
-                TokenType::Char => {
-                    self.advance();
-                    TypeAnnotation::CChar
-                }
-                TokenType::Array => {
-                    self.advance();
-                    self.match_type(&[TokenType::LeftBracket]);
-                    let inner = self.parse_type(false);
-                    self.match_type(&[TokenType::RightBracket]);
-                    TypeAnnotation::CArray(Box::new(inner))
-                }
-                _ => {
-                    // should add error later
-                    unreachable!()
-                }
-            },
         }
     }
 }

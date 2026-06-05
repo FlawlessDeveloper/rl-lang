@@ -1,13 +1,23 @@
-use crate::{ast::nodes::Expression, lexer::tokentypes::TokenType};
+use crate::ast::nodes::Expression;
 
 #[derive(Debug)]
 pub enum Statement {
     VariableDeclaration {
         name: String,
-        type_annotation: TokenType,
+        type_annotation: TypeAnnotation,
+        value: Expression,
+    },
+    ConstantDeclaration {
+        name: String,
+        type_annotation: TypeAnnotation,
         value: Expression,
     },
     Array {
+        name: String,
+        type_annotation: TypeAnnotation,
+        value: Vec<Expression>,
+    },
+    ConstantArray {
         name: String,
         type_annotation: TypeAnnotation,
         value: Vec<Expression>,
@@ -36,4 +46,10 @@ pub enum TypeAnnotation {
     String,
     Char,
     Array(Box<TypeAnnotation>),
+    CInt,
+    CFloat,
+    CBool,
+    CString,
+    CChar,
+    CArray(Box<TypeAnnotation>),
 }

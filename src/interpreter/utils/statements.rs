@@ -8,7 +8,7 @@ impl Evaluator {
         match statement {
             Statement::VariableDeclaration {
                 name,
-                type_annotation: _,
+                type_annotation,
                 value,
             } => {
                 let val = self.evaluate(value);
@@ -18,7 +18,30 @@ impl Evaluator {
 
             Statement::Array {
                 name,
-                type_annotation: _,
+                type_annotation,
+                value,
+            } => {
+                let mut items: Vec<Value> = Vec::new();
+                for item in value {
+                    let item = self.evaluate(item);
+                    items.push(item);
+                }
+                self.insert_value(name.clone(), Value::Values(items));
+            }
+
+            Statement::ConstantDeclaration {
+                name,
+                type_annotation,
+                value,
+            } => {
+                let val = self.evaluate(value);
+                // should add type check here but for now assume the user input correctly
+                self.insert_value(name.clone(), val);
+            }
+
+            Statement::ConstantArray {
+                name,
+                type_annotation,
                 value,
             } => {
                 let mut items: Vec<Value> = Vec::new();
