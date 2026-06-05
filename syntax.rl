@@ -48,18 +48,18 @@ dec arr[arr[int]] nested = [inner, inner]
 // 5. printing
 // ------------------------------------------------------------
 
-display::println(my_bool, my_int, my_string, my_float, my_char)  // true 1 string 1.0 x
+std::display::println(my_bool, my_int, my_string, my_float, my_char)  // true 1 string 1.0 x
 
-display::println(my_int_array)    // [10, 20, 30]
-display::println(my_bool_array)   // [true, false, true]
-display::println(my_string_array) // [my, world, hello]
-display::println(my_float_array)  // [1.0, 2.0, 3.0]
-display::println(my_char_array)   // [., r, l]
+std::display::println(my_int_array)    // [10, 20, 30]
+std::display::println(my_bool_array)   // [true, false, true]
+std::display::println(my_string_array) // [my, world, hello]
+std::display::println(my_float_array)  // [1.0, 2.0, 3.0]
+std::display::println(my_char_array)   // [., r, l]
 
-display::println(my_int_array[1]) // 20
+std::display::println(my_int_array[1]) // 20
 
-display::println(nested)          // [[1, 2, 3], [1, 2, 3]]
-display::println(nested[1][2])    // 3
+std::display::println(nested)          // [[1, 2, 3], [1, 2, 3]]
+std::display::println(nested[1][2])    // 3
 
 
 // ------------------------------------------------------------
@@ -68,33 +68,33 @@ display::println(nested[1][2])    // 3
 
 my_bool = !my_bool           // false
 my_bool_array[0] = my_bool   // [false, false, true]
-display::println(my_bool_array)
+std::display::println(my_bool_array)
 
 my_int += 3                  // 4
-my_int += math::pow(my_int, my_int) // 260
-display::println(my_int)
+my_int += std::math::pow(my_int, my_int) // 260
+std::display::println(my_int)
 
-my_int_array[0] = math::mod(my_int_array[1], my_int_array[2]) // 20
-display::println(my_int_array)
+my_int_array[0] = std::math::mod(my_int_array[1], my_int_array[2]) // 20
+std::display::println(my_int_array)
 
 nested[0][2] = 45
-display::println(nested[0][2]) // 45
+std::display::println(nested[0][2]) // 45
 
 
 // ------------------------------------------------------------
 // 7. math stdlib
 // ------------------------------------------------------------
 
-dec float my_float_sin = math::sin(my_float)
-dec float my_float_cos = math::cos(my_float)
-dec float my_float_tan = math::tan(my_float)
+dec float my_float_sin = std::math::sin(my_float)
+dec float my_float_cos = std::math::cos(my_float)
+dec float my_float_tan = std::math::tan(my_float)
 
-display::println(my_float_sin, my_float_cos, my_float_tan)
+std::display::println(my_float_sin, my_float_cos, my_float_tan)
 // 0.8414709848078965 0.5403023058681398 1.5574077246549023
 
-display::println(math::pow(2, 10))    // 1024
-display::println(math::mod(17, 5))    // 2
-display::println(display::len(my_int_array)) // 3
+std::display::println(std::math::pow(2, 10))    // 1024
+std::display::println(std::math::mod(17, 5))    // 2
+std::display::println(std::display::len(my_int_array)) // 3
 
 
 // ------------------------------------------------------------
@@ -104,13 +104,13 @@ display::println(display::len(my_int_array)) // 3
 dec int score = 75
 
 if (score >= 90) {
-  display::println("A")
+  std::display::println("A")
 } else if (score >= 75) {
-  display::println("B")
+  std::display::println("B")
 } else if (score >= 60) {
-  display::println("C")
+  std::display::println("C")
 } else {
-  display::println("F")
+  std::display::println("F")
 }
 
 
@@ -123,10 +123,10 @@ dec float x     = 1.5
 dec arr[float] arr_x = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 while (i < 10) {
-  if (math::mod(x, (x / 2.0)) > 10.0) {
-    arr_x[i] = x + math::pow(x, x)
-  } else if (math::mod(x, (x / 3.0)) == 0.0) {
-    arr_x[i] = x + -x * (x + math::pow(x, 3))
+  if (std::math::mod(x, (x / 2.0)) > 10.0) {
+    arr_x[i] = x + std::math::pow(x, x)
+  } else if (std::math::mod(x, (x / 3.0)) == 0.0) {
+    arr_x[i] = x + -x * (x + std::math::pow(x, 3))
   } else {
     arr_x[i] = 90.09
   }
@@ -135,7 +135,7 @@ while (i < 10) {
   i += 1
 }
 
-display::println(arr_x)
+std::display::println(arr_x)
 // [-5.8125, 90.09, 90.09, -95295373.51360005, 90.09, 90.09, 90.09, -9744278800898.861, 90.09, 90.09]
 
 
@@ -147,6 +147,6 @@ CONST arr[int]    PRIMES  = [2, 3, 5, 7, 11]
 CONST arr[string] DAYS    = ["sat", "sun", "mon", "tue", "wed", "thu", "fri"]
 CONST arr[float]  WEIGHTS = [0.1, 0.4, 0.5]
 
-display::println(PRIMES[0])  // 2
-display::println(DAYS[6])    // fri
-display::println(display::len(WEIGHTS)) // 3
+std::display::println(PRIMES[0])  // 2
+std::display::println(DAYS[6])    // fri
+std::display::println(std::display::len(WEIGHTS)) // 3
