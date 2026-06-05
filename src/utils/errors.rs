@@ -59,6 +59,8 @@ impl Error {
     /// [Lexer Error]
     /// unknown token `$`
     /// ```
+    ///
+    /// temporary using panic!() for repl
     pub fn print_error(&self) {
         match &self.line {
             Some(l) => println!("[{}) Error: {}]", l, self.message),
@@ -77,7 +79,8 @@ impl Error {
             }
         }
 
-        std::process::exit(1);
+        // std::process::exit(1);
+        panic!("rl error");
     }
 }
 

@@ -3,6 +3,7 @@ use rl_lang::{
     interpreter::evaluator::Evaluator,
     lexer::tokenizer::Tokenizer,
     parser::parser_logic::Parser,
+    repl,
     utils::errors::{Error, ErrorReason, Reason},
 };
 
@@ -31,8 +32,20 @@ fn main() {
     info!("reading arguments");
     let arguments: Vec<String> = std::env::args().collect();
     debug!("used arguments [{:?}]", arguments);
-    if arguments.len() != 3 || arguments[1] != "run" {
+    if arguments.len() == 3 && arguments[1] != "run" {
         eprintln!("Usage: rlp run <source-file.rl>");
+        return;
+    } else if arguments.len() == 3 && arguments[1] == "run" {
+        log::info!("starting the interpreter");
+    } else if arguments.len() == 2 && arguments[1] == "repl" {
+        log::info!("starting repl shell");
+        println!("[Starting REPL shell]");
+        repl::repl();
+        return;
+    } else {
+        log::info!("falling back to repl");
+        println!("[Starting REPL shell]");
+        repl::repl();
         return;
     }
 
