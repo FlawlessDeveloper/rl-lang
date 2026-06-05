@@ -29,7 +29,7 @@ pub fn repl() {
         }
 
         let source = SourceFile::new("<repl>", input.to_string());
-        let tokens = match Tokenizer::lex(source) {
+        let tokens = match Tokenizer::lex(source.clone()) {
             Ok(t) => t,
             Err(e) => {
                 e.report_to_stderr();
@@ -37,9 +37,15 @@ pub fn repl() {
             }
         };
 
-        let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-            let statements = Parser::parse(tokens);
+        let statements = match Parser::parse(tokens, source) {
+            Ok(s) => s,
+            Err(e) => {
+                e.report_to_stderr();
+                continue;
+            }
+        };
 
+        let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
             for statement in statements {
                 evaluator.evaluate_statement(&statement);
             }

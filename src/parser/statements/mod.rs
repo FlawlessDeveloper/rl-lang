@@ -16,17 +16,17 @@ use crate::{
 
 impl Parser {
     /// parsing [`TokenType`]s into [`Statement`]s
-    pub fn parse_statement_to_ast(&mut self) -> Statement {
+    pub fn parse_statement_to_ast(&mut self) -> Result<Statement, Error> {
         let start = self.peek_span();
         match self.peek() {
             TokenType::Newline => {
                 self.advance();
                 log::info!("found newline while parsing... skipping");
                 let span = self.previous_span();
-                Statement::new(
+                Ok(Statement::new(
                     StatementKind::Expression(Expression::new(ExpressionKind::Integer(0), span)),
                     span,
-                )
+                ))
             }
             TokenType::Dec => {
                 self.advance();
@@ -45,13 +45,10 @@ impl Parser {
             }
             TokenType::For => {
                 let span = self.peek_span();
-                Statement::new(
+                Ok(Statement::new(
                     StatementKind::Expression(Expression::new(ExpressionKind::Integer(0), span)),
                     span,
-                ) // for now
-                // self.advance();
-                // log::info!("found `for` while parsing");
-                // self.parse_for()
+                )) // for now
             }
             TokenType::If => {
                 self.advance();
@@ -60,17 +57,17 @@ impl Parser {
             }
             _ => {
                 log::info!("parsing the current tokens as expression");
-                let expr = self.parse_expression();
+                let expr = self.parse_expression()?;
                 let span = expr.span;
-                Statement::new(StatementKind::Expression(expr), span)
+                Ok(Statement::new(StatementKind::Expression(expr), span))
             }
         }
     }
 
     /// parses the body between '{' '}' into list of [`Statement`]s
-    pub fn parse_block(&mut self) -> Vec<Statement> {
+    pub fn parse_block(&mut self) -> Result<Vec<Statement>, Error> {
         if !self.match_type(&[TokenType::LeftBrace]) {
-            Error::init("expected '{'".to_string(), None, None).print_error();
+            return Err(self.err("expected `{`", self.peek_span()));
         }
         let mut statements = Vec::new();
 
@@ -80,9 +77,9 @@ impl Parser {
                 self.advance();
                 continue;
             }
-            statements.push(self.parse_statement_to_ast());
+            statements.push(self.parse_statement_to_ast()?);
         }
         self.match_type(&[TokenType::RightBrace]);
-        statements
+        Ok(statements)
     }
 }

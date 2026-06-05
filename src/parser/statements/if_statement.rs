@@ -2,19 +2,14 @@ use crate::{
     ast::statements::{Statement, StatementKind},
     lexer::tokentypes::TokenType,
     parser::parser_logic::Parser,
-    utils::span::Span,
+    utils::{errors::Error, span::Span},
 };
 
 impl Parser {
     /// caled after hitting [`TokenType::If`] returing [`Statement::Conditional`]
-    ///
-    /// will parse the condition and returns [`crate::ast::nodes::Expression`]
-    /// then it will parse the body after checking for [`TokenType::LeftBrace`] and
-    /// returns [`Vec<Statement>`] if there is any else or else if branches it will
-    /// detect them and return them as [`Statement::ConditionalBranch`]
-    pub fn parse_if(&mut self, start: Span) -> Statement {
-        let if_condition = self.parse_expression();
-        let if_body = self.parse_block();
+    pub fn parse_if(&mut self, start: Span) -> Result<Statement, Error> {
+        let if_condition = self.parse_expression()?;
+        let if_body = self.parse_block()?;
         log::debug!("parsed if branch");
         let if_branch_span = start.join(self.previous_span());
         let if_branch = Statement::new(
@@ -36,8 +31,8 @@ impl Parser {
             self.advance();
             if self.peek() == TokenType::If {
                 self.advance();
-                let branch_condition = self.parse_expression();
-                let branch_body = self.parse_block();
+                let branch_condition = self.parse_expression()?;
+                let branch_body = self.parse_block()?;
                 let span = branch_start.join(self.previous_span());
                 let branch = Statement::new(
                     StatementKind::ConditionalBranch {
@@ -53,7 +48,7 @@ impl Parser {
                 }
             } else {
                 else_start = Some(branch_start);
-                else_body = self.parse_block();
+                else_body = self.parse_block()?;
                 else_end_span = self.previous_span();
             }
         }
@@ -73,13 +68,13 @@ impl Parser {
         };
 
         let span = start.join(self.previous_span());
-        Statement::new(
+        Ok(Statement::new(
             StatementKind::Conditional {
                 if_branch: Box::new(if_branch),
                 elseif_branch: Some(elseif_branch),
                 else_branch,
             },
             span,
-        )
+        ))
     }
 }

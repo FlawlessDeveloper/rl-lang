@@ -92,7 +92,13 @@ fn main() {
 
     // phase two: parsing the tokens into ast tree
     info!("parsing the tokens into ast tree...");
-    let statements = Parser::parse(tokens);
+    let statements = match Parser::parse(tokens, source.clone()) {
+        Ok(s) => s,
+        Err(e) => {
+            e.report_to_stderr();
+            std::process::exit(1);
+        }
+    };
 
     // phase three: evaluating the ast tree
     info!("evaluating the ast tree...");
