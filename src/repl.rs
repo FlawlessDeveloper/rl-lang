@@ -36,7 +36,7 @@ pub fn repl() {
             }
         }));
         if result.is_err() {
-            eprint!("error: aborted\n")
+            eprintln!("error: aborted")
         }
     }
 
