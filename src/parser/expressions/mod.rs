@@ -1,6 +1,10 @@
 use std::process::exit;
 
-use crate::{ast::nodes::Expression, lexer::tokentypes::TokenType, parser::parser_logic::Parser};
+use crate::{
+    ast::nodes::{Expression, ExpressionKind},
+    lexer::tokentypes::TokenType,
+    parser::parser_logic::Parser,
+};
 
 impl Parser {
     pub fn parse_expression(&mut self) -> Expression {
@@ -13,11 +17,15 @@ impl Parser {
         while self.match_type(&[TokenType::BangEqual, TokenType::Compare]) {
             let operator = self.previous();
             let right = self.parse_comparsion();
-            left = Expression::Binary {
-                left: Box::new(left),
-                operator,
-                right: Box::new(right),
-            };
+            let span = left.span.join(right.span);
+            left = Expression::new(
+                ExpressionKind::Binary {
+                    left: Box::new(left),
+                    operator,
+                    right: Box::new(right),
+                },
+                span,
+            );
         }
         left
     }
@@ -36,13 +44,16 @@ impl Parser {
         ]) {
             let operator = self.previous();
             let right = self.parse_term();
+            let span = left.span.join(right.span);
 
             match operator {
                 TokenType::PlusEqual
                 | TokenType::MinusEqual
                 | TokenType::StarEqual
                 | TokenType::SlashEqual => {
-                    if let Expression::Identifier(name) = left {
+                    if let ExpressionKind::Identifier(name) = &left.kind {
+                        let name = name.clone();
+                        let lhs_span = left.span;
                         let operator = match operator {
                             TokenType::PlusEqual => TokenType::Plus,
                             TokenType::MinusEqual => TokenType::Minus,
@@ -50,29 +61,44 @@ impl Parser {
                             TokenType::SlashEqual => TokenType::Slash,
                             _ => unreachable!(),
                         };
-                        let binary = Expression::Binary {
-                            left: Box::new(Expression::Identifier(name.clone())),
-                            operator,
-                            right: Box::new(right),
-                        };
-                        left = Expression::Assign {
-                            name: name.clone(),
-                            value: Box::new(binary),
-                        };
+                        let binary = Expression::new(
+                            ExpressionKind::Binary {
+                                left: Box::new(Expression::new(
+                                    ExpressionKind::Identifier(name.clone()),
+                                    lhs_span,
+                                )),
+                                operator,
+                                right: Box::new(right),
+                            },
+                            span,
+                        );
+                        left = Expression::new(
+                            ExpressionKind::Assign {
+                                name,
+                                value: Box::new(binary),
+                            },
+                            span,
+                        );
                     } else {
-                        left = Expression::Binary {
-                            left: Box::new(left),
-                            operator,
-                            right: Box::new(right),
-                        };
+                        left = Expression::new(
+                            ExpressionKind::Binary {
+                                left: Box::new(left),
+                                operator,
+                                right: Box::new(right),
+                            },
+                            span,
+                        );
                     }
                 }
                 _ => {
-                    left = Expression::Binary {
-                        left: Box::new(left),
-                        operator,
-                        right: Box::new(right),
-                    };
+                    left = Expression::new(
+                        ExpressionKind::Binary {
+                            left: Box::new(left),
+                            operator,
+                            right: Box::new(right),
+                        },
+                        span,
+                    );
                 }
             }
         }
@@ -86,12 +112,15 @@ impl Parser {
             // get the operator the match_type applied advance on
             let operator = self.previous();
             let right = self.parse_factor();
-            // boxes the output
-            left = Expression::Binary {
-                left: Box::new(left),
-                operator,
-                right: Box::new(right),
-            };
+            let span = left.span.join(right.span);
+            left = Expression::new(
+                ExpressionKind::Binary {
+                    left: Box::new(left),
+                    operator,
+                    right: Box::new(right),
+                },
+                span,
+            );
         }
         left
     }
@@ -101,23 +130,32 @@ impl Parser {
         while self.match_type(&[TokenType::Star, TokenType::Slash]) {
             let operator = self.previous();
             let right = self.parse_unary();
-            left = Expression::Binary {
-                left: Box::new(left),
-                operator,
-                right: Box::new(right),
-            };
+            let span = left.span.join(right.span);
+            left = Expression::new(
+                ExpressionKind::Binary {
+                    left: Box::new(left),
+                    operator,
+                    right: Box::new(right),
+                },
+                span,
+            );
         }
         left
     }
 
     pub fn parse_unary(&mut self) -> Expression {
+        let start = self.peek_span();
         if self.match_type(&[TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
             let operand = self.parse_unary();
-            return Expression::Unary {
-                operator,
-                operand: Box::new(operand),
-            };
+            let span = start.join(operand.span);
+            return Expression::new(
+                ExpressionKind::Unary {
+                    operator,
+                    operand: Box::new(operand),
+                },
+                span,
+            );
         }
         self.parse_primary()
     }
@@ -126,9 +164,12 @@ impl Parser {
         log::debug!("current index: {:?}", self.current);
         log::debug!("current token: {:?}", self.peek());
 
+        let start = self.peek_span();
+
         // is it identifier
         if self.match_type(&[TokenType::Identifier(String::new())]) {
             log::debug!("found identifier");
+            let ident_span = self.previous_span();
             if let TokenType::Identifier(name) = self.previous() {
                 // is it function call?
                 if self.match_type(&[TokenType::LeftParen]) {
@@ -146,54 +187,74 @@ impl Parser {
                         }
                     }
                     self.match_type(&[TokenType::RightParen]);
-                    return Expression::Call { name, args };
+                    let span = start.join(self.previous_span());
+                    return Expression::new(ExpressionKind::Call { name, args }, span);
                 }
 
                 // is it assignment?
                 if self.match_type(&[TokenType::Assign]) {
                     log::debug!("found variable assignment");
                     let value = self.parse_expression();
-                    return Expression::Assign {
-                        name,
-                        value: Box::new(value),
-                    };
+                    let span = start.join(value.span);
+                    return Expression::new(
+                        ExpressionKind::Assign {
+                            name,
+                            value: Box::new(value),
+                        },
+                        span,
+                    );
                 }
                 if self.match_type(&[TokenType::LeftBracket]) {
                     let index = self.parse_expression();
                     self.match_type(&[TokenType::RightBracket]);
+                    let after_index_span = self.previous_span();
 
-                    let mut expr = Expression::Index {
-                        target: Box::new(Expression::Identifier(name.clone())),
-                        index: Box::new(index),
-                    };
+                    let mut expr = Expression::new(
+                        ExpressionKind::Index {
+                            target: Box::new(Expression::new(
+                                ExpressionKind::Identifier(name.clone()),
+                                ident_span,
+                            )),
+                            index: Box::new(index),
+                        },
+                        start.join(after_index_span),
+                    );
 
                     // consume chained indices for nested arrays: arr[0][1][2]
                     while self.peek() == TokenType::LeftBracket {
                         self.advance();
                         let next_index = self.parse_expression();
                         self.match_type(&[TokenType::RightBracket]);
-                        expr = Expression::Index {
-                            target: Box::new(expr),
-                            index: Box::new(next_index),
-                        };
+                        let span = start.join(self.previous_span());
+                        expr = Expression::new(
+                            ExpressionKind::Index {
+                                target: Box::new(expr),
+                                index: Box::new(next_index),
+                            },
+                            span,
+                        );
                     }
 
                     // is it index-assign?
                     if self.match_type(&[TokenType::Assign]) {
                         log::debug!("found array item assignment");
                         let value = self.parse_expression();
-                        if let Expression::Index { target, index } = expr {
-                            return Expression::IndexAssign {
-                                target,
-                                index,
-                                value: Box::new(value),
-                            };
+                        let span = start.join(value.span);
+                        if let ExpressionKind::Index { target, index } = expr.kind {
+                            return Expression::new(
+                                ExpressionKind::IndexAssign {
+                                    target,
+                                    index,
+                                    value: Box::new(value),
+                                },
+                                span,
+                            );
                         }
                     }
 
                     return expr;
                 }
-                return Expression::Identifier(name);
+                return Expression::new(ExpressionKind::Identifier(name), ident_span);
             }
         }
 
@@ -218,22 +279,24 @@ impl Parser {
                 }
             }
             self.match_type(&[TokenType::RightBracket]);
-            return Expression::ArrayLiteral(items);
+            let span = start.join(self.previous_span());
+            return Expression::new(ExpressionKind::ArrayLiteral(items), span);
         }
-        // panic
         // is it integer?
         if self.match_type(&[TokenType::NumberLiteral(0)]) {
             log::debug!("found number");
+            let span = self.previous_span();
             if let TokenType::NumberLiteral(n) = self.previous() {
-                return Expression::Integer(n);
+                return Expression::new(ExpressionKind::Integer(n), span);
             }
         }
 
         // is it String?
         if self.match_type(&[TokenType::StringLiteral(String::new())]) {
             log::debug!("found string");
+            let span = self.previous_span();
             if let TokenType::StringLiteral(s) = self.previous() {
-                return Expression::String(s);
+                return Expression::new(ExpressionKind::String(s), span);
             }
         }
 
@@ -244,24 +307,27 @@ impl Parser {
         ) {
             self.advance();
             log::debug!("found characher");
+            let span = self.previous_span();
             if let TokenType::CharacterLiteral(c) = self.previous() {
-                return Expression::Character(c);
+                return Expression::new(ExpressionKind::Character(c), span);
             }
         }
 
         // is it bool?
         if self.match_type(&[TokenType::BoolLiteral(false)]) {
             // log::debug!("found bool");
+            let span = self.previous_span();
             if let TokenType::BoolLiteral(b) = self.previous() {
-                return Expression::Bool(b);
+                return Expression::new(ExpressionKind::Bool(b), span);
             }
         }
 
         // is it float??
         if self.match_type(&[TokenType::FloatLiteral(0.0)]) {
             log::debug!("oh no found float");
+            let span = self.previous_span();
             if let TokenType::FloatLiteral(f) = self.previous() {
-                return Expression::Float(f);
+                return Expression::new(ExpressionKind::Float(f), span);
             }
         }
 
@@ -270,7 +336,8 @@ impl Parser {
             log::debug!("found group start");
             let inner = self.parse_expression();
             self.match_type(&[TokenType::RightParen]);
-            return Expression::Grouping(Box::new(inner));
+            let span = start.join(self.previous_span());
+            return Expression::new(ExpressionKind::Grouping(Box::new(inner)), span);
         }
 
         // panic

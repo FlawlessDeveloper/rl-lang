@@ -1,11 +1,12 @@
 use crate::{
-    ast::statements::{Statement, TypeAnnotation},
+    ast::statements::{Statement, StatementKind, TypeAnnotation},
     lexer::tokentypes::TokenType,
     parser::parser_logic::Parser,
+    utils::span::Span,
 };
 
 impl Parser {
-    pub fn parse_variable_declartion(&mut self) -> Statement {
+    pub fn parse_variable_declartion(&mut self, start: Span) -> Statement {
         log::debug!("{:?}", self.peek());
         log::debug!("parsing type");
         if self.match_type(&[TokenType::Array]) && self.peek() == TokenType::LeftBracket {
@@ -127,11 +128,15 @@ impl Parser {
                 }
             }
             self.match_type(&[TokenType::RightBracket]);
-            return Statement::Array {
-                name,
-                type_annotation: annoation_type,
-                value: items,
-            };
+            let span = start.join(self.previous_span());
+            return Statement::new(
+                StatementKind::Array {
+                    name,
+                    type_annotation: annoation_type,
+                    value: items,
+                },
+                span,
+            );
         }
 
         let var_type = self.parse_type(true);
@@ -169,12 +174,16 @@ impl Parser {
         }
 
         let value = self.parse_expression();
+        let span = start.join(value.span);
 
-        crate::ast::statements::Statement::VariableDeclaration {
-            name,
-            type_annotation: var_type,
-            value,
-        }
+        Statement::new(
+            StatementKind::VariableDeclaration {
+                name,
+                type_annotation: var_type,
+                value,
+            },
+            span,
+        )
     }
 }
 

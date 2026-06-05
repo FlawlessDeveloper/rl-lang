@@ -1,5 +1,5 @@
 use crate::{
-    ast::nodes::Expression,
+    ast::nodes::{Expression, ExpressionKind},
     interpreter::{evaluator::Evaluator, values::Value},
     utils::errors::Error,
 };
@@ -16,17 +16,17 @@ impl Evaluator {
 
         // get the root array name
         fn get_root_name(expression: &Expression) -> &str {
-            match expression {
-                Expression::Identifier(array_name) => array_name,
-                Expression::Index { target, .. } => get_root_name(target),
+            match &expression.kind {
+                ExpressionKind::Identifier(array_name) => array_name,
+                ExpressionKind::Index { target, .. } => get_root_name(target),
                 _ => unreachable!(),
             }
         }
 
         fn get_indices_as_vec(expression: &Expression, evaluator: &mut Evaluator) -> Vec<usize> {
-            match expression {
-                Expression::Identifier(_) => vec![],
-                Expression::Index { target, index } => {
+            match &expression.kind {
+                ExpressionKind::Identifier(_) => vec![],
+                ExpressionKind::Index { target, index } => {
                     let mut indices = get_indices_as_vec(target, evaluator);
                     if let Value::Integer(i) = evaluator.evaluate(index) {
                         indices.push(i as usize);

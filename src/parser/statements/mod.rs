@@ -5,7 +5,10 @@ mod variable_declaration;
 mod while_statement;
 
 use crate::{
-    ast::{nodes::Expression, statements::Statement},
+    ast::{
+        nodes::{Expression, ExpressionKind},
+        statements::{Statement, StatementKind},
+    },
     lexer::tokentypes::TokenType,
     parser::parser_logic::Parser,
     utils::errors::Error,
@@ -14,29 +17,38 @@ use crate::{
 impl Parser {
     /// parsing [`TokenType`]s into [`Statement`]s
     pub fn parse_statement_to_ast(&mut self) -> Statement {
+        let start = self.peek_span();
         match self.peek() {
             TokenType::Newline => {
                 self.advance();
                 log::info!("found newline while parsing... skipping");
-                Statement::Expression(Expression::Integer(0))
+                let span = self.previous_span();
+                Statement::new(
+                    StatementKind::Expression(Expression::new(ExpressionKind::Integer(0), span)),
+                    span,
+                )
             }
             TokenType::Dec => {
                 self.advance();
                 log::info!("found `declaration` for variable while parsing");
-                self.parse_variable_declartion()
+                self.parse_variable_declartion(start)
             }
             TokenType::Const => {
                 self.advance();
                 log::info!("found `declaration` for constant while parsing");
-                self.parse_const_declartion()
+                self.parse_const_declartion(start)
             }
             TokenType::While => {
                 self.advance();
                 log::info!("found `while` while parsing");
-                self.parse_while()
+                self.parse_while(start)
             }
             TokenType::For => {
-                return Statement::Expression(Expression::Integer(0)); // for now
+                let span = self.peek_span();
+                Statement::new(
+                    StatementKind::Expression(Expression::new(ExpressionKind::Integer(0), span)),
+                    span,
+                ) // for now
                 // self.advance();
                 // log::info!("found `for` while parsing");
                 // self.parse_for()
@@ -44,12 +56,13 @@ impl Parser {
             TokenType::If => {
                 self.advance();
                 log::info!("found `if` while parsing");
-                self.parse_if()
+                self.parse_if(start)
             }
             _ => {
                 log::info!("parsing the current tokens as expression");
                 let expr = self.parse_expression();
-                Statement::Expression(expr)
+                let span = expr.span;
+                Statement::new(StatementKind::Expression(expr), span)
             }
         }
     }

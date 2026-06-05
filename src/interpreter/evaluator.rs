@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    ast::nodes::Expression,
+    ast::nodes::{Expression, ExpressionKind},
     interpreter::{stdlib, values::Value},
     utils::errors::Error,
 };
@@ -18,13 +18,13 @@ impl Default for Evaluator {
 
 impl Evaluator {
     pub fn evaluate(&mut self, expression: &Expression) -> Value {
-        match expression {
-            Expression::Integer(i) => Value::Integer(*i),
-            Expression::String(s) => Value::String(s.clone()),
-            Expression::Bool(b) => Value::Bool(*b),
-            Expression::Float(f) => Value::Float(*f),
-            Expression::Character(c) => Value::Char(*c),
-            Expression::Index { target, index } => {
+        match &expression.kind {
+            ExpressionKind::Integer(i) => Value::Integer(*i),
+            ExpressionKind::String(s) => Value::String(s.clone()),
+            ExpressionKind::Bool(b) => Value::Bool(*b),
+            ExpressionKind::Float(f) => Value::Float(*f),
+            ExpressionKind::Character(c) => Value::Char(*c),
+            ExpressionKind::Index { target, index } => {
                 let arr = self.evaluate(target);
                 let idx = self.evaluate(index);
                 match (arr, idx) {
@@ -48,17 +48,17 @@ impl Evaluator {
                     }
                 }
             }
-            Expression::ArrayLiteral(items) => {
+            ExpressionKind::ArrayLiteral(items) => {
                 let values = items.iter().map(|e| self.evaluate(e)).collect();
                 Value::Values(values)
             }
-            Expression::IndexAssign {
+            ExpressionKind::IndexAssign {
                 target,
                 index,
                 value,
             } => self.index_assign(target, index, value),
-            Expression::Grouping(inner) => self.evaluate(inner),
-            Expression::Binary {
+            ExpressionKind::Grouping(inner) => self.evaluate(inner),
+            ExpressionKind::Binary {
                 left,
                 operator,
                 right,
@@ -67,18 +67,18 @@ impl Evaluator {
                 let right = self.evaluate(right);
                 self.match_binary_operator(left, right, operator)
             }
-            Expression::Unary { operator, operand } => {
+            ExpressionKind::Unary { operator, operand } => {
                 let operand = self.evaluate(operand);
                 self.match_unary_operator(operand, operator)
             }
 
-            Expression::Identifier(name) => self.get_value(name.clone()),
-            Expression::Assign { name, value } => {
+            ExpressionKind::Identifier(name) => self.get_value(name.clone()),
+            ExpressionKind::Assign { name, value } => {
                 let val = self.evaluate(value);
                 self.insert_value(name.clone(), val.clone());
                 val
             }
-            Expression::Call { name, args } => {
+            ExpressionKind::Call { name, args } => {
                 let evaluated_args = args.iter().map(|arg| self.evaluate(arg)).collect();
                 self.call_function(name, evaluated_args)
             }

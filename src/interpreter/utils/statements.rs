@@ -1,18 +1,18 @@
 use crate::{
-    ast::statements::Statement,
+    ast::statements::{Statement, StatementKind},
     interpreter::{evaluator::Evaluator, values::Value},
 };
 
 impl Evaluator {
     pub fn evaluate_statement(&mut self, statement: &Statement) {
-        match statement {
-            Statement::VariableDeclaration { name, value, .. } => {
+        match &statement.kind {
+            StatementKind::VariableDeclaration { name, value, .. } => {
                 let val = self.evaluate(value);
                 // should add type check here but for now assume the user input correctly
                 self.insert_value(name.clone(), val);
             }
 
-            Statement::Array { name, value, .. } => {
+            StatementKind::Array { name, value, .. } => {
                 let mut items: Vec<Value> = Vec::new();
                 for item in value {
                     let item = self.evaluate(item);
@@ -21,13 +21,13 @@ impl Evaluator {
                 self.insert_value(name.clone(), Value::Values(items));
             }
 
-            Statement::ConstantDeclaration { name, value, .. } => {
+            StatementKind::ConstantDeclaration { name, value, .. } => {
                 let val = self.evaluate(value);
                 // should add type check here but for now assume the user input correctly
                 self.insert_const(name.clone(), val);
             }
 
-            Statement::ConstantArray { name, value, .. } => {
+            StatementKind::ConstantArray { name, value, .. } => {
                 let mut items: Vec<Value> = Vec::new();
                 for item in value {
                     let item = self.evaluate(item);
@@ -36,10 +36,10 @@ impl Evaluator {
                 self.insert_const(name.clone(), Value::Values(items));
             }
 
-            Statement::Expression(expr) => {
+            StatementKind::Expression(expr) => {
                 self.evaluate(expr);
             }
-            Statement::While { condition, body } => loop {
+            StatementKind::While { condition, body } => loop {
                 match self.evaluate(condition) {
                     Value::Bool(true) => {}
                     Value::Bool(false) => break,
@@ -49,8 +49,8 @@ impl Evaluator {
                 }
                 self.evaluate_block(body);
             },
-            Statement::Range(..) => {}
-            Statement::For {
+            StatementKind::Range(..) => {}
+            StatementKind::For {
                 initializer,
                 condition,
                 increment,
@@ -69,7 +69,7 @@ impl Evaluator {
                     self.evaluate(increment);
                 }
             }
-            Statement::ForRange { .. } => {
+            StatementKind::ForRange { .. } => {
                 return; // for now
                 // let mut items_range: Vec<i64> = match **range {
                 // Statement::Range(r) => r,
@@ -98,7 +98,7 @@ impl Evaluator {
                 //    self.evaluate_block(body);
                 //}
             }
-            Statement::ConditionalBranch { condition, body } => match condition {
+            StatementKind::ConditionalBranch { condition, body } => match condition {
                 Some(condition) => {
                     match self.evaluate(condition) {
                         Value::Bool(true) => {}
@@ -115,7 +115,7 @@ impl Evaluator {
                     self.evaluate_block(body);
                 }
             },
-            Statement::Conditional {
+            StatementKind::Conditional {
                 if_branch,
                 elseif_branch,
                 else_branch,
@@ -142,8 +142,8 @@ impl Evaluator {
     }
 
     fn evaluate_branch(&mut self, statement: &Statement) -> bool {
-        match statement {
-            Statement::ConditionalBranch { condition, body } => match condition {
+        match &statement.kind {
+            StatementKind::ConditionalBranch { condition, body } => match condition {
                 Some(condition) => match self.evaluate(condition) {
                     Value::Bool(true) => {
                         self.evaluate_block(body);
