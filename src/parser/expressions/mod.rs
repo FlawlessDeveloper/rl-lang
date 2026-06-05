@@ -129,7 +129,26 @@ impl Parser {
         // is it identifier
         if self.match_type(&[TokenType::Identifier(String::new())]) {
             log::debug!("found identifier");
-            if let TokenType::Identifier(name) = self.previous() {
+            if let TokenType::Identifier(first) = self.previous() {
+                // consume :: segments to build a module path
+                let mut path = vec![first];
+                while self.match_type(&[TokenType::ColonColon]) {
+                    if !self.match_type(&[TokenType::Identifier(String::new())]) {
+                        crate::utils::errors::Error::init(
+                            "expected identifier after `::`".to_string(),
+                            None,
+                            Some(crate::utils::errors::ErrorReason::init(
+                                crate::utils::errors::Reason::Parse,
+                                None,
+                            )),
+                        )
+                        .print_error();
+                    }
+                    if let TokenType::Identifier(seg) = self.previous() {
+                        path.push(seg);
+                    }
+                }
+
                 // is it function call?
                 if self.match_type(&[TokenType::LeftParen]) {
                     log::debug!("found function call");
@@ -146,8 +165,22 @@ impl Parser {
                         }
                     }
                     self.match_type(&[TokenType::RightParen]);
-                    return Expression::Call { name, args };
+                    return Expression::Call { path, args };
                 }
+
+                // not a call: module paths aren't first-class values
+                if path.len() > 1 {
+                    crate::utils::errors::Error::init(
+                        format!("module path `{}` used as value", path.join("::")),
+                        None,
+                        Some(crate::utils::errors::ErrorReason::init(
+                            crate::utils::errors::Reason::Parse,
+                            None,
+                        )),
+                    )
+                    .print_error();
+                }
+                let name = path.pop().unwrap();
 
                 // is it assignment?
                 if self.match_type(&[TokenType::Assign]) {

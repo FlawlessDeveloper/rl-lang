@@ -1,13 +1,19 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::{
     ast::nodes::Expression,
-    interpreter::{stdlib, values::Value},
+    interpreter::{
+        native::{IntoNativeFn, Module},
+        stdlib,
+        values::Value,
+    },
     utils::errors::Error,
 };
 
 pub struct Evaluator {
     pub environment: HashMap<String, (Value, bool)>,
+    root_module: Module,
 }
 
 impl Default for Evaluator {
@@ -78,9 +84,9 @@ impl Evaluator {
                 self.insert_value(name.clone(), val.clone());
                 val
             }
-            Expression::Call { name, args } => {
+            Expression::Call { path, args } => {
                 let evaluated_args = args.iter().map(|arg| self.evaluate(arg)).collect();
-                self.call_function(name, evaluated_args)
+                self.call_path(path, evaluated_args)
             }
         }
     }
@@ -88,7 +94,46 @@ impl Evaluator {
     pub fn new() -> Self {
         Self {
             environment: HashMap::new(),
+            root_module: Module::new(""),
         }
+    }
+
+    pub fn with_module(mut self, m: Module) -> Self {
+        self.root_module.submodules.insert(m.name.clone(), m);
+        self
+    }
+
+    pub fn with_function<F, A>(mut self, name: impl Into<String>, f: F) -> Self
+    where
+        F: IntoNativeFn<A>,
+    {
+        self.root_module
+            .functions
+            .insert(name.into(), f.into_native());
+        self
+    }
+
+    pub fn with_stdlib(self) -> Self {
+        self.with_module(
+            Module::new("std")
+                .with_module(stdlib::math::module())
+                .with_module(stdlib::display::module())
+                .with_module(stdlib::io::module()),
+        )
+    }
+
+    pub fn call_path(&mut self, path: &[String], args: Vec<Value>) -> Value {
+        if let Some(f) = self.root_module.resolve(path) {
+            let f = Arc::clone(f);
+            return f(self, args);
+        }
+        Error::init(
+            format!("undefined function {}", path.join("::")),
+            None,
+            None,
+        )
+        .print_error();
+        unreachable!()
     }
 
     pub fn get_value(&self, value_name: String) -> Value {
@@ -122,18 +167,5 @@ impl Evaluator {
             unreachable!();
         }
         self.environment.insert(value_name, (value, true));
-    }
-
-    pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> Value {
-        if stdlib::display::is_in_display(name) {
-            stdlib::display::match_std_display(name, args)
-        } else if stdlib::math::is_in_math(name) {
-            stdlib::math::match_std_math(name, args)
-        } else if stdlib::io::is_in_io(name) {
-            stdlib::io::match_std_io(name, args)
-        } else {
-            Error::init(format!("undefined function {}", name), None, None).print_error();
-            unreachable!();
-        }
     }
 }
