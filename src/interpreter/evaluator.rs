@@ -84,9 +84,9 @@ impl Evaluator {
                 self.insert_value(name.clone(), val.clone());
                 val
             }
-            Expression::Call { name, args } => {
+            Expression::Call { path, args } => {
                 let evaluated_args = args.iter().map(|arg| self.evaluate(arg)).collect();
-                self.call_function(name, evaluated_args)
+                self.call_path(path, evaluated_args)
             }
         }
     }
@@ -121,6 +121,9 @@ impl Evaluator {
         if let Some(f) = self.root_module.resolve(path) {
             let f = Arc::clone(f);
             return f(self, args);
+        }
+        if path.len() == 1 {
+            return self.call_function(&path[0], args);
         }
         Error::init(
             format!("undefined function {}", path.join("::")),

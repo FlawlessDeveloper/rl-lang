@@ -24,7 +24,7 @@ pub enum Expression {
         value: Box<Expression>,
     },
     Call {
-        name: String,
+        path: Vec<String>,
         args: Vec<Expression>,
     },
     Index {
