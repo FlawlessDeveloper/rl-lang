@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub struct Evaluator {
-    pub environment: HashMap<String, Value>,
+    pub environment: HashMap<String, (Value, bool)>,
 }
 
 impl Default for Evaluator {
@@ -94,8 +94,8 @@ impl Evaluator {
     pub fn get_value(&self, value_name: String) -> Value {
         // println!("target: {}", value_name.clone());
         match self.environment.get(&value_name) {
-            Some(val) => val.clone(),
-            _ => {
+            Some((val, _)) => val.clone(),
+            None => {
                 Error::init(format!("undefined variable {}", &value_name), None, None)
                     .print_error();
                 unreachable!();
@@ -104,8 +104,24 @@ impl Evaluator {
     }
 
     pub fn insert_value(&mut self, value_name: String, value: Value) {
-        self.environment.insert(value_name.clone(), value.clone());
-        // println!("{}, {:?}", value_name.clone(), value.clone());
+        if let Some((_, true)) = self.environment.get(&value_name) {
+            Error::init(
+                format!("cannot assign to constant '{}'", value_name),
+                None,
+                None,
+            )
+            .print_error();
+            unreachable!();
+        }
+        self.environment.insert(value_name, (value, false));
+    }
+
+    pub fn insert_const(&mut self, value_name: String, value: Value) {
+        if self.environment.contains_key(&value_name) {
+            Error::init(format!("'{}' is already declared", value_name), None, None).print_error();
+            unreachable!();
+        }
+        self.environment.insert(value_name, (value, true));
     }
 
     pub fn call_function(&mut self, name: &str, args: Vec<Value>) -> Value {

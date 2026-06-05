@@ -134,30 +134,7 @@ impl Parser {
             };
         }
 
-        let var_type = match self.peek() {
-            TokenType::Int
-            | TokenType::Float
-            | TokenType::Bool
-            | TokenType::String
-            | TokenType::Char => {
-                let t = self.peek();
-                self.advance();
-                t
-            }
-            _ => {
-                crate::utils::errors::Error::init(
-                    "expected type after dec".to_string(),
-                    None,
-                    Some(crate::utils::errors::ErrorReason::init(
-                        crate::utils::errors::Reason::Parse,
-                        None,
-                    )),
-                )
-                .print_error();
-                unreachable!()
-            }
-        };
-
+        let const_type = self.parse_type(false);
         let name = match self.peek() {
             TokenType::Identifier(n) => {
                 let n = n.clone();
@@ -194,7 +171,7 @@ impl Parser {
 
         crate::ast::statements::Statement::ConstantDeclaration {
             name,
-            type_annotation: var_type,
+            type_annotation: const_type,
             value,
         }
     }

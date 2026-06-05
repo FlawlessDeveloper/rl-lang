@@ -1,68 +1,152 @@
-// declaring arrays
-dec arr[int] my_int_array = [10, 20, 30]
-dec arr[bool] my_bool_array = [true, false, true]
-dec arr[string] my_string_array = ["my", "world", "hello"]
-dec arr[float] my_float_array = [1.0, 2.0, 3.0]
-dec arr[char] my_char_array = ['.', 'r', 'l']
+// ============================================================
+// syntax.rl — rl language syntax showcase
+// ============================================================
 
-// declaring variables
-dec bool my_bool = true
-dec int my_int = 1
+
+// ------------------------------------------------------------
+// 1. variable declarations (mutable)
+// ------------------------------------------------------------
+
+dec bool   my_bool   = true
+dec int    my_int    = 1
 dec string my_string = "string"
-dec float my_float = 1.0
-dec char my_char = 'x'
+dec float  my_float  = 1.0
+dec char   my_char   = 'x'
 
-// printing values (with newline)
-println(my_float_array) // [1.0, 2.0, 3.0]
-println(my_char_array) // ['.', 'r', 'l']
-println(my_string_array) // ["my", "world", "hello"]
-println(my_bool_array) // [true, false, true]
-println(my_int_array) // [10, 20, 30]
+
+// ------------------------------------------------------------
+// 2. constant declarations (immutable)
+// ------------------------------------------------------------
+
+CONST int    MAX_SIZE  = 100
+CONST float  PI        = 3.14159
+CONST bool   DEBUG     = false
+CONST string LANG_NAME = "rlink"
+CONST char   NEWLINE   = '\n'
+
+
+// ------------------------------------------------------------
+// 3. array declarations
+// ------------------------------------------------------------
+
+dec arr[int]    my_int_array    = [10, 20, 30]
+dec arr[bool]   my_bool_array   = [true, false, true]
+dec arr[string] my_string_array = ["my", "world", "hello"]
+dec arr[float]  my_float_array  = [1.0, 2.0, 3.0]
+dec arr[char]   my_char_array   = ['.', 'r', 'l']
+
+
+// ------------------------------------------------------------
+// 4. nested arrays
+// ------------------------------------------------------------
+
+dec arr[int]      inner  = [1, 2, 3]
+dec arr[arr[int]] nested = [inner, inner]
+
+
+// ------------------------------------------------------------
+// 5. printing
+// ------------------------------------------------------------
+
+println(my_bool, my_int, my_string, my_float, my_char)  // true 1 string 1.0 x
+
+println(my_int_array)    // [10, 20, 30]
+println(my_bool_array)   // [true, false, true]
+println(my_string_array) // [my, world, hello]
+println(my_float_array)  // [1.0, 2.0, 3.0]
+println(my_char_array)   // [., r, l]
+
 println(my_int_array[1]) // 20
-println(my_bool, my_int, my_string, my_float, my_char) // true 1 "string" 1.0 x
 
-// assigning
-my_bool = !my_bool
-my_bool_array[0] = my_bool
-println(my_bool_array) // [false, false, true]
+println(nested)          // [[1, 2, 3], [1, 2, 3]]
+println(nested[1][2])    // 3
 
-my_int += 3 // 4
-my_int += pow(my_int,my_int) // 260
+
+// ------------------------------------------------------------
+// 6. assignment and mutation
+// ------------------------------------------------------------
+
+my_bool = !my_bool           // false
+my_bool_array[0] = my_bool   // [false, false, true]
+println(my_bool_array)
+
+my_int += 3                  // 4
+my_int += pow(my_int, my_int) // 260
+println(my_int)
+
 my_int_array[0] = mod(my_int_array[1], my_int_array[2]) // 20
+println(my_int_array)
+
+nested[0][2] = 45
+println(nested[0][2]) // 45
+
+
+// ------------------------------------------------------------
+// 7. math stdlib
+// ------------------------------------------------------------
 
 dec float my_float_sin = sin(my_float)
-dec float my_int_cos = cos(my_int)
+dec float my_float_cos = cos(my_float)
 dec float my_float_tan = tan(my_float)
-println(my_float_sin, my_int_cos, my_float_tan) // 0.8414709848078965 -0.7301941571456378 1.5574077246549023
 
-// other std
+println(my_float_sin, my_float_cos, my_float_tan)
+// 0.8414709848078965 0.5403023058681398 1.5574077246549023
+
+println(pow(2, 10))    // 1024
+println(mod(17, 5))    // 2
 println(len(my_int_array)) // 3
 
-// loops
 
-dec int i = 0
-dec float x = 1.5
+// ------------------------------------------------------------
+// 8. control flow — if / else if / else
+// ------------------------------------------------------------
+
+dec int score = 75
+
+if (score >= 90) {
+  println("A")
+} else if (score >= 75) {
+  println("B")
+} else if (score >= 60) {
+  println("C")
+} else {
+  println("F")
+}
+
+
+// ------------------------------------------------------------
+// 9. control flow — while loop
+// ------------------------------------------------------------
+
+dec int   i     = 0
+dec float x     = 1.5
 dec arr[float] arr_x = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
 while (i < 10) {
-  
-  if ( mod(x, (x / 2.0)) > 10.0 ) {
+  if (mod(x, (x / 2.0)) > 10.0) {
     arr_x[i] = x + pow(x, x)
-  } else if ( mod(x, (x / 3.0)) == 0.0) {
-    arr_x[i] = x + -x * (x + pow(x , 3))
+  } else if (mod(x, (x / 3.0)) == 0.0) {
+    arr_x[i] = x + -x * (x + pow(x, 3))
   } else {
     arr_x[i] = 90.09
   }
-  
+
   x += x + 12.4
   i += 1
 }
-println(arr_x) // [-5.8125, 90.09, 90.09, -95295373.51360005, 90.09, 90.09, 90.09, -9744278800898.861, 90.09, 90.09]
+
+println(arr_x)
+// [-5.8125, 90.09, 90.09, -95295373.51360005, 90.09, 90.09, 90.09, -9744278800898.861, 90.09, 90.09]
 
 
-// testing
-dec arr[int] inner = [1, 2, 3]
-dec arr[arr[int]] nested = [inner, inner]
-println(nested)
-println(nested[1][2])
-nested[0][2] = 45
-println(nested[0][2])
+// ------------------------------------------------------------
+// 10. constant arrays
+// ------------------------------------------------------------
+
+CONST arr[int]    PRIMES  = [2, 3, 5, 7, 11]
+CONST arr[string] DAYS    = ["sat", "sun", "mon", "tue", "wed", "thu", "fri"]
+CONST arr[float]  WEIGHTS = [0.1, 0.4, 0.5]
+
+println(PRIMES[0])  // 2
+println(DAYS[6])    // fri
+println(len(WEIGHTS)) // 3

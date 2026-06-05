@@ -1,6 +1,7 @@
 use crate::{
     ast::nodes::Expression,
     interpreter::{evaluator::Evaluator, values::Value},
+    utils::errors::Error,
 };
 
 impl Evaluator {
@@ -42,7 +43,16 @@ impl Evaluator {
             indices.push(i as usize);
         }
 
-        let root_array = self.environment.get_mut(&root).unwrap();
+        let (root_array, is_const) = self.environment.get_mut(&root).unwrap();
+        if *is_const {
+            Error::init(
+                format!("cannot assign to constant '{}'", root_array),
+                None,
+                None,
+            )
+            .print_error();
+            unreachable!();
+        }
         let mut current_array = root_array;
 
         for i in &indices[..indices.len() - 1] {

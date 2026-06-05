@@ -134,29 +134,7 @@ impl Parser {
             };
         }
 
-        let var_type = match self.peek() {
-            TokenType::Int
-            | TokenType::Float
-            | TokenType::Bool
-            | TokenType::String
-            | TokenType::Char => {
-                let t = self.peek();
-                self.advance();
-                t
-            }
-            _ => {
-                crate::utils::errors::Error::init(
-                    "expected type after dec".to_string(),
-                    None,
-                    Some(crate::utils::errors::ErrorReason::init(
-                        crate::utils::errors::Reason::Parse,
-                        None,
-                    )),
-                )
-                .print_error();
-                unreachable!()
-            }
-        };
+        let var_type = self.parse_type(true);
 
         let name = match self.peek() {
             TokenType::Identifier(n) => {

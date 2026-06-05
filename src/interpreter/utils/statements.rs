@@ -6,21 +6,13 @@ use crate::{
 impl Evaluator {
     pub fn evaluate_statement(&mut self, statement: &Statement) {
         match statement {
-            Statement::VariableDeclaration {
-                name,
-                type_annotation,
-                value,
-            } => {
+            Statement::VariableDeclaration { name, value, .. } => {
                 let val = self.evaluate(value);
                 // should add type check here but for now assume the user input correctly
                 self.insert_value(name.clone(), val);
             }
 
-            Statement::Array {
-                name,
-                type_annotation,
-                value,
-            } => {
+            Statement::Array { name, value, .. } => {
                 let mut items: Vec<Value> = Vec::new();
                 for item in value {
                     let item = self.evaluate(item);
@@ -29,27 +21,19 @@ impl Evaluator {
                 self.insert_value(name.clone(), Value::Values(items));
             }
 
-            Statement::ConstantDeclaration {
-                name,
-                type_annotation,
-                value,
-            } => {
+            Statement::ConstantDeclaration { name, value, .. } => {
                 let val = self.evaluate(value);
                 // should add type check here but for now assume the user input correctly
-                self.insert_value(name.clone(), val);
+                self.insert_const(name.clone(), val);
             }
 
-            Statement::ConstantArray {
-                name,
-                type_annotation,
-                value,
-            } => {
+            Statement::ConstantArray { name, value, .. } => {
                 let mut items: Vec<Value> = Vec::new();
                 for item in value {
                     let item = self.evaluate(item);
                     items.push(item);
                 }
-                self.insert_value(name.clone(), Value::Values(items));
+                self.insert_const(name.clone(), Value::Values(items));
             }
 
             Statement::Expression(expr) => {
