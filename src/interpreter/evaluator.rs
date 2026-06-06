@@ -81,7 +81,7 @@ impl Evaluator {
             Expression::Identifier(name) => self.get_value(name.clone()),
             Expression::Assign { name, value } => {
                 let val = self.evaluate(value);
-                self.insert_value(name.clone(), val.clone());
+                self.assign_value(name.clone(), val.clone());
                 val
             }
             Expression::Call { path, args } => {
