@@ -48,11 +48,11 @@ pub enum StatementKind {
         body: Vec<Statement>,
     },
     ForRange {
-        variable: Expression,
+        variable: String,
         range: Box<Statement>,
         body: Vec<Statement>,
     },
-    Range(Vec<Expression>),
+    Range(Vec<i64>),
     ConditionalBranch {
         condition: Option<Expression>,
         body: Vec<Statement>,
@@ -62,9 +62,17 @@ pub enum StatementKind {
         elseif_branch: Option<Vec<Statement>>,
         else_branch: Option<Box<Statement>>,
     },
+
+    /// the start of awesomeness
+    Import {
+        /// list of the functions name
+        names: Vec<String>,
+        /// list of paths to functions
+        path: Vec<String>,
+    },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeAnnotation {
     Int,
     Float,

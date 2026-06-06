@@ -1,6 +1,7 @@
 mod const_declaration;
-// mod for_statement;
+mod for_statement;
 mod if_statement;
+mod import_statement;
 mod variable_declaration;
 mod while_statement;
 
@@ -27,6 +28,16 @@ impl Parser {
                     StatementKind::Expression(Expression::new(ExpressionKind::Integer(0), span)),
                     span,
                 ))
+            }
+
+            // the new import
+            TokenType::Get => {
+                // consume it
+                self.advance();
+                // log it
+                log::info!("found `get` for import while parsing");
+                // parse it
+                self.parse_import()
             }
             TokenType::Dec => {
                 self.advance();

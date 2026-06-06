@@ -53,9 +53,16 @@ impl Evaluator {
         let (root_array, _) = self.environment.get_mut(&root).unwrap();
         let mut current_array = root_array;
 
-        for i in &indices[..indices.len() - 1] {
-            if let Value::Values(items) = current_array {
-                current_array = &mut items[*i];
+                for i in &indices[..indices.len() - 1] {
+                    if let Value::Values(items) = current_array {
+                        current_array = &mut items[*i];
+                    }
+                }
+                if let Value::Values(items) = current_array {
+                    items[*indices.last().unwrap()] = val.clone();
+                }
+
+                return val;
             }
         }
         if let Value::Values(items) = current_array {
