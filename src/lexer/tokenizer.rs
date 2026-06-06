@@ -11,9 +11,6 @@ pub struct Tokenizer {
     pub source_file: SourceFile,
     // the source if characters sequence
     pub source: Vec<char>,
-    /// maps a char index to its byte offset in the original source string.
-    /// length is `source.len() + 1`; the final entry is the total byte length.
-    pub byte_offsets: Vec<usize>,
     // the accumlated token list
     pub tokens: Vec<super::tokentypes::Token>,
     /// the index of current character
@@ -30,18 +27,11 @@ impl Tokenizer {
     /// appends a TokenType::Eof so the parser works with a clean list of tokens.
     pub fn lex(source_file: SourceFile) -> Result<Vec<Token>, Error> {
         let chars: Vec<char> = source_file.text.chars().collect();
-        let mut byte_offsets = Vec::with_capacity(chars.len() + 1);
-        let mut offset = 0usize;
-        for c in &chars {
-            byte_offsets.push(offset);
-            offset += c.len_utf8();
-        }
-        byte_offsets.push(offset);
+        let eof_char_index = chars.len();
 
         let mut lexer = Tokenizer {
             source_file,
             source: chars,
-            byte_offsets,
             tokens: Vec::new(),
             current: 0,
             start: 0,
@@ -53,21 +43,24 @@ impl Tokenizer {
             lexer.scan_tokens()?;
         }
 
-        let eof_offset = *lexer.byte_offsets.last().unwrap();
         lexer.tokens.push(Token::new(
             TokenType::Eof,
             String::new(),
             lexer.line,
-            Span::new(eof_offset, eof_offset),
+            Span::new(eof_char_index, eof_char_index),
         ));
 
         log::debug!("Recognized {} token(s)", lexer.tokens.len());
         Ok(lexer.tokens)
     }
 
-    /// Span covering the current token (from `self.start` to `self.current` in chars).
+    /// Span covering the current token, in character indices into the source.
+    ///
+    /// Ariadne's `Source::from(&str)` indexes by character, so spans must be
+    /// char-indexed too — passing byte offsets misaligns reports whenever
+    /// multi-byte characters precede the span.
     pub fn current_span(&self) -> Span {
-        Span::new(self.byte_offsets[self.start], self.byte_offsets[self.current])
+        Span::new(self.start, self.current)
     }
 
     /// build a [`Reason::Lexer`] error anchored at `span`, with the source attached.
