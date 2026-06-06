@@ -7,6 +7,7 @@ use crate::{
         errors::{Error, Reason},
         source::SourceFile,
         span::Span,
+        suggest::closest_match,
     },
 };
 
@@ -134,7 +135,15 @@ impl Evaluator {
     pub fn get_value(&self, name: &str, span: Span) -> Result<Value, Error> {
         match self.environment.get(name) {
             Some((val, _)) => Ok(val.clone()),
-            None => Err(self.err(format!("undefined variable {}", name), span)),
+            None => {
+                let mut err = self.err(format!("undefined variable {}", name), span);
+                if let Some(suggestion) =
+                    closest_match(name, self.environment.keys().map(|s| s.as_str()))
+                {
+                    err = err.with_help(format!("did you mean `{}`?", suggestion));
+                }
+                Err(err)
+            }
         }
     }
 
@@ -167,7 +176,16 @@ impl Evaluator {
         } else if stdlib::io::is_in_io(name) {
             Ok(stdlib::io::match_std_io(name, args))
         } else {
-            Err(self.err(format!("undefined function {}", name), span))
+            let mut err = self.err(format!("undefined function {}", name), span);
+            let candidates = stdlib::display::KEYWORDS
+                .iter()
+                .chain(stdlib::math::KEYWORDS)
+                .chain(stdlib::io::KEYWORDS)
+                .copied();
+            if let Some(suggestion) = closest_match(name, candidates) {
+                err = err.with_help(format!("did you mean `{}`?", suggestion));
+            }
+            Err(err)
         }
     }
 }

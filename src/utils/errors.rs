@@ -21,6 +21,8 @@ pub struct Error {
     source: Option<Arc<String>>,
     /// source file name shown in the report header
     source_name: Option<String>,
+    /// optional help/hint line shown after the snippet (e.g. "did you mean foo?")
+    help: Option<String>,
 }
 
 /// provides an error category with optional error context
@@ -63,6 +65,7 @@ impl Error {
             labels: Vec::new(),
             source: None,
             source_name: None,
+            help: None,
         }
     }
 
@@ -79,6 +82,7 @@ impl Error {
             labels: Vec::new(),
             source: None,
             source_name: None,
+            help: None,
         }
     }
 
@@ -105,6 +109,12 @@ impl Error {
     /// attach a human-readable source name (e.g. file path).
     pub fn with_source_name(mut self, name: impl Into<String>) -> Self {
         self.source_name = Some(name.into());
+        self
+    }
+
+    /// attach a help/hint line shown beneath the snippet (e.g. "did you mean foo?").
+    pub fn with_help(mut self, help: impl Into<String>) -> Self {
+        self.help = Some(help.into());
         self
     }
 
@@ -142,6 +152,9 @@ impl Error {
                         .with_message(label)
                         .with_color(Color::Yellow),
                 );
+            }
+            if let Some(help) = &self.help {
+                builder = builder.with_help(help);
             }
             let _ = builder
                 .finish()

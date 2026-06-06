@@ -2,7 +2,7 @@ use crate::interpreter::values::Value;
 
 pub mod input;
 
-const KEYWORDS: &[&str] = &["input"];
+pub const KEYWORDS: &[&str] = &["input"];
 
 pub fn is_in_io(name: &str) -> bool {
     if KEYWORDS.contains(&name) {

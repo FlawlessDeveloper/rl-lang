@@ -4,7 +4,7 @@ pub mod len;
 pub mod print;
 pub mod println;
 
-const KEYWORDS: &[&str] = &["print", "println", "len"];
+pub const KEYWORDS: &[&str] = &["print", "println", "len"];
 
 pub fn is_in_display(name: &str) -> bool {
     if KEYWORDS.contains(&name) {

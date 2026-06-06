@@ -6,7 +6,7 @@ pub mod tan;
 
 use crate::interpreter::values::Value;
 
-const KEYWORDS: &[&str] = &["sin", "cos", "tan", "pow", "mod"];
+pub const KEYWORDS: &[&str] = &["sin", "cos", "tan", "pow", "mod"];
 
 pub fn is_in_math(name: &str) -> bool {
     if KEYWORDS.contains(&name) {
