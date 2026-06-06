@@ -102,9 +102,12 @@ fn main() {
 
     // phase three: evaluating the ast tree
     info!("evaluating the ast tree...");
-    let mut evaluator = Evaluator::default();
+    let mut evaluator = Evaluator::default().with_source_file(source);
     for statement in statements {
-        evaluator.evaluate_statement(&statement);
+        if let Err(e) = evaluator.evaluate_statement(&statement) {
+            e.report_to_stderr();
+            std::process::exit(1);
+        }
     }
     info!("evaluation done")
 }

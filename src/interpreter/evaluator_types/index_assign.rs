@@ -1,7 +1,7 @@
 use crate::{
     ast::nodes::{Expression, ExpressionKind},
     interpreter::{evaluator::Evaluator, values::Value},
-    utils::errors::Error,
+    utils::{errors::Error, span::Span},
 };
 
 impl Evaluator {
@@ -10,11 +10,11 @@ impl Evaluator {
         target: &Expression,
         index: &Expression,
         value: &Expression,
-    ) -> Value {
-        let idx = self.evaluate(index);
-        let val = self.evaluate(value);
+        span: Span,
+    ) -> Result<Value, Error> {
+        let idx = self.evaluate(index)?;
+        let val = self.evaluate(value)?;
 
-        // get the root array name
         fn get_root_name(expression: &Expression) -> &str {
             match &expression.kind {
                 ExpressionKind::Identifier(array_name) => array_name,
@@ -23,36 +23,34 @@ impl Evaluator {
             }
         }
 
-        fn get_indices_as_vec(expression: &Expression, evaluator: &mut Evaluator) -> Vec<usize> {
+        fn get_indices_as_vec(
+            expression: &Expression,
+            evaluator: &mut Evaluator,
+        ) -> Result<Vec<usize>, Error> {
             match &expression.kind {
-                ExpressionKind::Identifier(_) => vec![],
+                ExpressionKind::Identifier(_) => Ok(vec![]),
                 ExpressionKind::Index { target, index } => {
-                    let mut indices = get_indices_as_vec(target, evaluator);
-                    if let Value::Integer(i) = evaluator.evaluate(index) {
+                    let mut indices = get_indices_as_vec(target, evaluator)?;
+                    if let Value::Integer(i) = evaluator.evaluate(index)? {
                         indices.push(i as usize);
                     }
-                    indices
+                    Ok(indices)
                 }
                 _ => unreachable!(),
             }
         }
 
         let root = get_root_name(target).to_string();
-        let mut indices = get_indices_as_vec(target, self);
+        let mut indices = get_indices_as_vec(target, self)?;
         if let Value::Integer(i) = idx {
             indices.push(i as usize);
         }
 
-        let (root_array, is_const) = self.environment.get_mut(&root).unwrap();
-        if *is_const {
-            Error::init(
-                format!("cannot assign to constant '{}'", root_array),
-                None,
-                None,
-            )
-            .print_error();
-            unreachable!();
+        if let Some((_, true)) = self.environment.get(&root) {
+            return Err(self.err(format!("cannot assign to constant '{}'", root), span));
         }
+
+        let (root_array, _) = self.environment.get_mut(&root).unwrap();
         let mut current_array = root_array;
 
         for i in &indices[..indices.len() - 1] {
@@ -64,6 +62,6 @@ impl Evaluator {
             items[*indices.last().unwrap()] = val.clone();
         }
 
-        val
+        Ok(val)
     }
 }

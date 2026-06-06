@@ -37,7 +37,7 @@ pub fn repl() {
             }
         };
 
-        let statements = match Parser::parse(tokens, source) {
+        let statements = match Parser::parse(tokens, source.clone()) {
             Ok(s) => s,
             Err(e) => {
                 e.report_to_stderr();
@@ -45,9 +45,14 @@ pub fn repl() {
             }
         };
 
+        evaluator.set_source_file(source);
+
         let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
             for statement in statements {
-                evaluator.evaluate_statement(&statement);
+                if let Err(e) = evaluator.evaluate_statement(&statement) {
+                    e.report_to_stderr();
+                    break;
+                }
             }
         }));
         if result.is_err() {
