@@ -57,18 +57,28 @@ impl Evaluator {
             ExpressionKind::Index { target, index } => {
                 let arr = self.evaluate(target)?;
                 let idx = self.evaluate(index)?;
-                match (arr, idx) {
+                match (&arr, &idx) {
                     (Value::Values(items), Value::Integer(i)) => {
-                        let i = i as usize;
-                        if i >= items.len() {
-                            return Err(self.err(
-                                format!("index {} out of bounds (len {})", i, items.len()),
-                                expression.span,
-                            ));
+                        let i_usize = *i as usize;
+                        if i_usize >= items.len() {
+                            return Err(self
+                                .err(
+                                    format!("index {} out of bounds (len {})", i, items.len()),
+                                    expression.span,
+                                )
+                                .with_label(
+                                    target.span,
+                                    format!("this array has length {}", items.len()),
+                                ));
                         }
-                        items[i].clone()
+                        items[i_usize].clone()
                     }
-                    _ => return Err(self.err("invalid index operation", expression.span)),
+                    _ => {
+                        return Err(self
+                            .err("invalid index operation", expression.span)
+                            .with_label(target.span, format!("this is {}", arr.type_name()))
+                            .with_label(index.span, format!("this is {}", idx.type_name())));
+                    }
                 }
             }
             ExpressionKind::ArrayLiteral(items) => {
@@ -91,11 +101,18 @@ impl Evaluator {
             } => {
                 let left_val = self.evaluate(left)?;
                 let right_val = self.evaluate(right)?;
-                self.match_binary_operator(left_val, right_val, operator, expression.span)?
+                self.match_binary_operator(
+                    left_val,
+                    left.span,
+                    right_val,
+                    right.span,
+                    operator,
+                    expression.span,
+                )?
             }
             ExpressionKind::Unary { operator, operand } => {
                 let operand_val = self.evaluate(operand)?;
-                self.match_unary_operator(operand_val, operator, expression.span)?
+                self.match_unary_operator(operand_val, operand.span, operator, expression.span)?
             }
             ExpressionKind::Identifier(name) => self.get_value(name, expression.span)?,
             ExpressionKind::Assign { name, value } => {

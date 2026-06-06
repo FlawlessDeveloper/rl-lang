@@ -37,10 +37,18 @@ impl Evaluator {
                 self.evaluate(expr)?;
             }
             StatementKind::While { condition, body } => loop {
-                match self.evaluate(condition)? {
+                let v = self.evaluate(condition)?;
+                match v {
                     Value::Bool(true) => {}
                     Value::Bool(false) => break,
-                    _ => return Err(self.err("while condition must be a bool", condition.span)),
+                    other => {
+                        return Err(self
+                            .err("while condition must be a bool", statement.span)
+                            .with_label(
+                                condition.span,
+                                format!("this is {}, expected bool", other.type_name()),
+                            ));
+                    }
                 }
                 self.evaluate_block(body)?;
             },
@@ -53,10 +61,18 @@ impl Evaluator {
             } => {
                 self.evaluate_statement(initializer)?;
                 loop {
-                    match self.evaluate(condition)? {
+                    let v = self.evaluate(condition)?;
+                    match v {
                         Value::Bool(true) => {}
                         Value::Bool(false) => break,
-                        _ => return Err(self.err("for condition must be a bool", condition.span)),
+                        other => {
+                            return Err(self
+                                .err("for condition must be a bool", statement.span)
+                                .with_label(
+                                    condition.span,
+                                    format!("this is {}, expected bool", other.type_name()),
+                                ));
+                        }
                     }
                     self.evaluate_block(body)?;
                     self.evaluate(increment)?;
@@ -67,10 +83,18 @@ impl Evaluator {
             }
             StatementKind::ConditionalBranch { condition, body } => match condition {
                 Some(condition) => {
-                    match self.evaluate(condition)? {
+                    let v = self.evaluate(condition)?;
+                    match v {
                         Value::Bool(true) => {}
                         Value::Bool(false) => return Ok(()),
-                        _ => return Err(self.err("condition must be a bool", condition.span)),
+                        other => {
+                            return Err(self
+                                .err("condition must be a bool", statement.span)
+                                .with_label(
+                                    condition.span,
+                                    format!("this is {}, expected bool", other.type_name()),
+                                ));
+                        }
                     }
                     self.evaluate_block(body)?;
                 }
@@ -106,14 +130,22 @@ impl Evaluator {
     fn evaluate_branch(&mut self, statement: &Statement) -> Result<bool, Error> {
         match &statement.kind {
             StatementKind::ConditionalBranch { condition, body } => match condition {
-                Some(condition) => match self.evaluate(condition)? {
-                    Value::Bool(true) => {
-                        self.evaluate_block(body)?;
-                        Ok(true)
+                Some(condition) => {
+                    let v = self.evaluate(condition)?;
+                    match v {
+                        Value::Bool(true) => {
+                            self.evaluate_block(body)?;
+                            Ok(true)
+                        }
+                        Value::Bool(false) => Ok(false),
+                        other => Err(self
+                            .err("condition must be a bool", statement.span)
+                            .with_label(
+                                condition.span,
+                                format!("this is {}, expected bool", other.type_name()),
+                            )),
                     }
-                    Value::Bool(false) => Ok(false),
-                    _ => Err(self.err("condition must be a bool", condition.span)),
-                },
+                }
                 None => {
                     self.evaluate_block(body)?;
                     Ok(true)
